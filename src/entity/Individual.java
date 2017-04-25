@@ -1,7 +1,8 @@
-package model;
+package entity;
+
+import utils.ArrayUtils;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by audun on 16.04.17.
@@ -11,39 +12,45 @@ public class Individual implements Comparable<Individual> {
 
     protected final int n, m;
     protected final ArrayList<Queue<Subtask>> jobs;
-    protected int fitness, bestFitness;
-    protected ArrayList<Double> position, bestPosition;
+    protected int makespan, minMakespan;
+    protected double[] position, bestPosition;
 
     public Individual(int n, int m, ArrayList<Queue<Subtask>> jobs) {
         this.n = n;
         this.m = m;
         this.jobs = jobs;
-        this.position = randGen.doubles(0, n*m)
-                .limit(n*m)
-                .mapToObj(Double::valueOf)
-                .collect(Collectors.toCollection(ArrayList::new));
-        this.bestPosition = new ArrayList(position);
+        this.position = randGen.doubles(0, 10).limit(n*m).toArray();
+        this.bestPosition = position.clone();
+        this.minMakespan = Integer.MAX_VALUE;
     }
 
-    public ArrayList<Double> getPosition() {
+    public int getM() {
+        return m;
+    }
+
+    public int getN() {
+        return n;
+    }
+
+    public double[] getPosition() {
         return this.position;
     }
 
-    public void setPosition(ArrayList<Double> position) {
-        this.position = new ArrayList(position);
+    public void setPosition(double[] position) {
+        this.position = position.clone();
     }
 
     private int[] getSequence() {
         int[] sequence = new int[n*m];
-        ArrayList<Double> sorted =  new ArrayList(position);
-        Collections.sort(sorted);
-        for(int i = 0; i < position.size(); ++i) {
-            sequence[i] = position.indexOf(sorted.get(i)) % n;
+        double[] sorted =  position.clone();
+        Arrays.sort(sorted);
+        for(int i = 0; i < position.length; ++i) {
+            sequence[i] = ArrayUtils.indexOf(position,sorted[i]) % n;
         }
         return sequence;
     }
 
-    public void calculateFitness() {
+    public void calculateMakespan() {
         ArrayList<Queue<Subtask>> jobsToSchedule = new ArrayList();
         for(Queue<Subtask> job : jobs) {
             jobsToSchedule.add(new LinkedList(job));
@@ -72,21 +79,21 @@ public class Individual implements Comparable<Individual> {
             }
         }
 
-        fitness = makespan;
-        if(fitness < bestFitness) {
-            bestFitness = fitness;
-            bestPosition = new ArrayList(position);
+        this.makespan = makespan;
+        if(this.makespan < minMakespan) {
+            minMakespan = this.makespan;
+            bestPosition = position.clone();
         }
     }
 
-    public int getFitness() {
-        return fitness;
+    public int getMakespan() {
+        return makespan;
     }
 
     public int compareTo(Individual other) {
-        if(this.getFitness() > other.getFitness()) {
+        if(this.getMakespan() > other.getMakespan()) {
             return 1;
-        } else if(this.getFitness() < other.getFitness()) {
+        } else if(this.getMakespan() < other.getMakespan()) {
             return -1;
         } else {
             return 0;

@@ -1,105 +1,97 @@
 package computation;
 
-import model.Individual;
-import model.Particle;
-import model.Subtask;
+import entity.Individual;
+import entity.Particle;
+import entity.Subtask;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Queue;
-import java.util.Random;
 
 /**
  * Created by audun on 25.04.17.
  */
 public class JSSPSolver {
 
-    static final Random randGen = new Random();
-
-    static final double W_MAX = 1.4;
-    static final double W_MIN = 0.4;
-    static final double C1 = 2;
-    static final double C2 = 2;
-    static final double BETA = 0.97;
-    static final double T_F = 0.1;
-
     final int n;
     final int m;
     final ArrayList<Queue<Subtask>> jobs;
 
-    int maxGen;
-    int popSize;
-
+    int maxIter;
     double optimalFitness;
 
-    public JSSPSolver(int n, int m, ArrayList<Queue<Subtask>> jobs, int maxGen, int popSize, double optimalFitness) {
+    public JSSPSolver(int n, int m, ArrayList<Queue<Subtask>> jobs, double optimalFitness, int maxIter) {
         this.n = n;
         this.m = m;
         this.jobs = jobs;
-        this.maxGen = maxGen;
-        this.popSize = popSize;
+        this.maxIter = maxIter;
         this.optimalFitness = optimalFitness;
     }
 
-    public void setMaxGen(int maxGen) {
-        this.maxGen = maxGen;
+    public void setMaxIter(int maxIter) {
+        this.maxIter = maxIter;
     }
 
-    public void setPopSize(int popSize) {
-        this.popSize = popSize;
-    }
+    public Individual particleSwarmOptimization(int swarmSize) {
+        final double W_MAX = 1.4;
+        final double W_MIN = 0.4;
+        final double C1 = 2;
+        final double C2 = 2;
 
-    public Individual particleSwarmOptimization() {
         ArrayList<Particle> swarm = new ArrayList();
-        for(int i = 0; i < popSize; ++i) {
+        for(int i = 0; i < swarmSize; ++i) {
             swarm.add(new Particle(n,m,jobs));
         }
 
         for(Particle p : swarm) {
-            p.calculateFitness();
+            p.calculateMakespan();
         }
         Collections.sort(swarm);
-        ArrayList<Double> gBestPosition = swarm.get(0).getPosition();
-        double gBestFitness = swarm.get(0).getFitness();
+        double[] gBestPosition = swarm.get(0).getPosition();
+        double gBestMakespan = Integer.MAX_VALUE;
 
         double w;
-        for(int gen = 0; gen < maxGen; ++gen) {
-            if(gen % 100 == 0) {
-                System.out.println("Gen " + gen);
-                System.out.println("Fitness " + gBestFitness);
+        for(int i = 0; i < maxIter; ++i) {
+            if(i % 100 == 0) {
+                System.out.println("Generation " + i + " (makespan = " + gBestMakespan + ")");
             }
 
-            w = W_MAX - gen*((W_MAX-W_MIN)/ maxGen);
+            w = W_MAX - i*((W_MAX-W_MIN)/ maxIter);
             for(Particle p : swarm) {
                 p.updatePosition(gBestPosition, w, C1, C2);
-                p.calculateFitness();
-                /*if(randGen.nextDouble() < 0.01) {
-                    p.simmulatedAnnealing(p.getFitness() - gBestFitness, T_F, BETA);
-                }*/
+                p.calculateMakespan();
             }
 
             Collections.sort(swarm);
-            if(swarm.get(0).getFitness() < gBestFitness) {
-                gBestPosition = new ArrayList(swarm.get(0).getPosition());
-                gBestFitness = swarm.get(0).getFitness();
-            } else {
-                // Elitism
-                int idx = randGen.nextInt(popSize);
-                swarm.get(idx).setPosition(gBestPosition);
-                swarm.get(idx).calculateFitness();
+            if(swarm.get(0).getMakespan() < gBestMakespan) {
+                gBestPosition = swarm.get(0).getPosition().clone();
+                gBestMakespan = swarm.get(0).getMakespan();
+                System.out.println("New best Makespan: " + gBestMakespan);
             }
 
-            if(gBestFitness < 1.1*optimalFitness) {
-                System.out.println("Within 10% of optimal value by " + gen + " generations");
+            if(gBestMakespan < 1.10*optimalFitness) {
+                System.out.println("Within 10% of optimal value by " + i + " generations");
                 break;
             }
         }
 
-        Collections.sort(swarm);
-        return swarm.get(0);
+        Particle bestParticle = new Particle(n,m,jobs);
+        bestParticle.setPosition(gBestPosition);
+        bestParticle.calculateMakespan();
+        return bestParticle;
     }
 
     public Individual beesAlgorithm() {
+        final int ns; // Number of scout bees
+        final int ne; // Number of elite sites
+        final int nb; // Number of best sites
+        final int nre; // Number of recruited bees for elite sites
+        final int nrb; // Number of recruited bees for best sites
+        final int ngh; // Initial site of neighbourhood
+        final int stlib; // Limit of stagnation cycles for site abandonment
+
+
+        ArrayList<Individual> scouts = new ArrayList();
         return new Individual(n,m,jobs);
     }
 }

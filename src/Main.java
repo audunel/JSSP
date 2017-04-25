@@ -1,7 +1,9 @@
 import computation.JSSPSolver;
-import model.Individual;
-import model.Subtask;
+import entity.Individual;
+import entity.Subtask;
+import org.jfree.ui.RefineryUtilities;
 import utils.StringUtils;
+import visualization.ScheduleFrame;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -12,7 +14,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
-        FileReader file = new FileReader("test_data/5.txt");
+        FileReader file = new FileReader("test_data/1.txt");
         BufferedReader bufReader = new BufferedReader(file);
 
         /* First line should contain n (number of jobs), and m (number of machines) */
@@ -36,8 +38,13 @@ public class Main {
         bufReader.close();
         file.close();
 
-        JSSPSolver solver = new JSSPSolver(n,m,jobs,5000,300, 1451);
-        Individual best = solver.particleSwarmOptimization();
-        System.out.println(best.getFitness());
+        JSSPSolver solver = new JSSPSolver(n,m,jobs,56,5000);
+        Individual best = solver.particleSwarmOptimization(300);
+        System.out.println(best.getMakespan());
+
+        ScheduleFrame frame = new ScheduleFrame("",best,jobs);
+        frame.pack();
+        RefineryUtilities.centerFrameOnScreen(frame);
+        frame.setVisible(true);
     }
 }
