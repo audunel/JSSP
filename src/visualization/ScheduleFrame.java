@@ -1,7 +1,8 @@
 package visualization;
 
-import entity.Individual;
-import entity.Subtask;
+import model.Individual;
+import model.JSSP;
+import model.Subtask;
 import org.jfree.chart.*;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.data.gantt.Task;
@@ -12,6 +13,7 @@ import org.jfree.ui.ApplicationFrame;
 import javax.swing.*;
 import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 /**
  * Created by audun on 18.04.17.
@@ -19,13 +21,15 @@ import java.util.*;
 
 public class ScheduleFrame extends ApplicationFrame {
 
-    public ScheduleFrame(String scheduleName, Individual ind, ArrayList<Queue<Subtask>> jobs) {
+    public ScheduleFrame(String scheduleName, Individual ind) {
         super(scheduleName);
+
+        List<Queue<Subtask>> jobs = JSSP.getInstance().getJobs();
 
         TaskSeriesCollection dataset = new TaskSeriesCollection();
         TaskSeries machineSchedule = new TaskSeries("job-schedule");
 
-        for(int i = 0; i < ind.getM(); ++i) {
+        for(int i = 0; i < ind.getNumMachines(); ++i) {
             Task machine = new TaskNumeric(""+i, 0, ind.getMakespan());
             machineSchedule.add(machine);
 

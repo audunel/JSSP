@@ -1,34 +1,39 @@
-package entity;
+package model;
 
 import utils.ArrayUtils;
 
 import java.util.*;
 
+
 /**
  * Created by audun on 16.04.17.
  */
 public class Individual implements Comparable<Individual> {
+    static final JSSP jssp = JSSP.getInstance();
+
     static final Random randGen = new Random();
 
-    protected final int n, m;
-    protected final ArrayList<Queue<Subtask>> jobs;
+    protected static final int n = jssp.getNumJobs();
+    protected static final int m = jssp.getNumMachines();
+    protected static final List<Queue<Subtask>> jobs = jssp.getJobs();
     protected int makespan, minMakespan;
     protected double[] position, bestPosition;
 
-    public Individual(int n, int m, ArrayList<Queue<Subtask>> jobs) {
-        this.n = n;
-        this.m = m;
-        this.jobs = jobs;
-        this.position = randGen.doubles(0, 10).limit(n*m).toArray();
+    public Individual(double[] position) {
+        this.position = position;
         this.bestPosition = position.clone();
         this.minMakespan = Integer.MAX_VALUE;
     }
 
-    public int getM() {
+    public Individual() {
+        this(ArrayUtils.randomArray(0,n*m,n*m));
+    }
+
+    public int getNumMachines() {
         return m;
     }
 
-    public int getN() {
+    public int getNumJobs() {
         return n;
     }
 
@@ -50,8 +55,8 @@ public class Individual implements Comparable<Individual> {
         return sequence;
     }
 
-    public void calculateMakespan() {
-        ArrayList<Queue<Subtask>> jobsToSchedule = new ArrayList();
+    public int calculateMakespan() {
+        List<Queue<Subtask>> jobsToSchedule = new ArrayList();
         for(Queue<Subtask> job : jobs) {
             jobsToSchedule.add(new LinkedList(job));
         }
@@ -84,6 +89,7 @@ public class Individual implements Comparable<Individual> {
             minMakespan = this.makespan;
             bestPosition = position.clone();
         }
+        return makespan;
     }
 
     public int getMakespan() {

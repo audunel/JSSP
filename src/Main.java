@@ -1,48 +1,32 @@
 import computation.JSSPSolver;
-import entity.Individual;
-import entity.Subtask;
+import model.Individual;
+import model.JSSP;
 import org.jfree.ui.RefineryUtilities;
-import utils.StringUtils;
 import visualization.ScheduleFrame;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
-import java.util.*;
 
 public class Main {
 
     public static void main(String[] args) throws IOException {
 
-        FileReader file = new FileReader("test_data/1.txt");
-        BufferedReader bufReader = new BufferedReader(file);
+        final String FILEPATH = "test_data/5.txt";
+        final int OPTIMAL_MAKESPAN = 1451;
+        final String ALGORITHM = "PSO";
 
-        /* First line should contain n (number of jobs), and m (number of machines) */
-        ArrayList<Integer> firstLine = StringUtils.parseLine(bufReader.readLine());
-        int n = firstLine.get(0);
-        System.out.println("n: " + n);
-        int m = firstLine.get(1);
-        System.out.println("m: " + m);
+        JSSP.loadFile(FILEPATH);
 
-        /* Following n lines should contain a description of each job, listing the machine
-         * number and processing time for each step of the job */
-        ArrayList<Queue<Subtask>> jobs = new ArrayList();
-        for(int i = 0; i < n; ++i) {
-            Queue<Subtask> job = new LinkedList();
-            ArrayList<Integer> jobDescription = StringUtils.parseLine(bufReader.readLine());
-            for(int j = 0; j < m; ++j) {
-                job.add(new Subtask(jobDescription.get(2*j), jobDescription.get(2*j + 1)));
-            }
-            jobs.add(job);
-        }
-        bufReader.close();
-        file.close();
+        JSSPSolver solver = new JSSPSolver(1.10*OPTIMAL_MAKESPAN);
+        solver.setMaxIter(5000);
 
-        JSSPSolver solver = new JSSPSolver(n,m,jobs,56,5000);
-        Individual best = solver.particleSwarmOptimization(300);
-        System.out.println(best.getMakespan());
+        long startTime = System.currentTimeMillis();
+        Individual best = solver.solve(ALGORITHM, OPTIMAL_MAKESPAN);
+        long endTime = System.currentTimeMillis();
 
-        ScheduleFrame frame = new ScheduleFrame("",best,jobs);
+        System.out.println("Found solution after " + (endTime - startTime)/1000 + " seconds");
+        System.out.println("Final makespan: " + best.getMakespan());
+
+        ScheduleFrame frame = new ScheduleFrame("Schedule",best);
         frame.pack();
         RefineryUtilities.centerFrameOnScreen(frame);
         frame.setVisible(true);

@@ -1,4 +1,4 @@
-package entity;
+package model;
 
 import java.util.*;
 
@@ -10,8 +10,8 @@ public class Particle extends Individual {
     final double maxVelocity;
     double[] velocity;
 
-    public Particle(int n, int m, ArrayList<Queue<Subtask>> jobs) {
-        super(n, m, jobs);
+    public Particle() {
+        super();
         this.maxVelocity = 0.1*n*m;
         velocity = randGen.doubles(0,this.maxVelocity).limit(n*m).toArray();
     }

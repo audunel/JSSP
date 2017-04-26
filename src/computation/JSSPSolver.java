@@ -1,46 +1,50 @@
 package computation;
 
-import entity.Individual;
-import entity.Particle;
-import entity.Subtask;
+import model.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Queue;
+import java.util.*;
 
 /**
  * Created by audun on 25.04.17.
  */
 public class JSSPSolver {
+    private static final JSSP jssp = JSSP.getInstance();
 
-    final int n;
-    final int m;
-    final ArrayList<Queue<Subtask>> jobs;
+    private static final int n = jssp.getNumJobs();
+    private static final int m = jssp.getNumMachines();
+    private static final List<Queue<Subtask>> jobs = jssp.getJobs();
 
-    int maxIter;
-    double optimalFitness;
+    private int maxIter;
+    private double targetMakespan;
 
-    public JSSPSolver(int n, int m, ArrayList<Queue<Subtask>> jobs, double optimalFitness, int maxIter) {
-        this.n = n;
-        this.m = m;
-        this.jobs = jobs;
-        this.maxIter = maxIter;
-        this.optimalFitness = optimalFitness;
+    public JSSPSolver(double targetMakespan) {
+        this.targetMakespan = targetMakespan;
+        this.maxIter = Integer.MAX_VALUE;
     }
 
     public void setMaxIter(int maxIter) {
         this.maxIter = maxIter;
     }
 
-    public Individual particleSwarmOptimization(int swarmSize) {
+    public Individual solve(String algorithm, int popSize) {
+        if(algorithm.equals("PSO")) {
+            return particleSwarmOptimization(popSize);
+        } else if(algorithm.equals("BA")) {
+            return beesAlgorithm(popSize);
+        } else {
+            throw new IllegalArgumentException("Algorithm not recognized");
+        }
+    }
+
+    public Particle particleSwarmOptimization(int swarmSize) {
         final double W_MAX = 1.4;
         final double W_MIN = 0.4;
         final double C1 = 2;
         final double C2 = 2;
 
-        ArrayList<Particle> swarm = new ArrayList();
+        List<Particle> swarm = new ArrayList();
         for(int i = 0; i < swarmSize; ++i) {
-            swarm.add(new Particle(n,m,jobs));
+            swarm.add(new Particle());
         }
 
         for(Particle p : swarm) {
@@ -48,12 +52,15 @@ public class JSSPSolver {
         }
         Collections.sort(swarm);
         double[] gBestPosition = swarm.get(0).getPosition();
-        double gBestMakespan = Integer.MAX_VALUE;
+
+        double makespan = Integer.MAX_VALUE;
+        double gBestMakespan = makespan;
 
         double w;
+        System.out.println("Solving with Particle Swarm Optimization");
         for(int i = 0; i < maxIter; ++i) {
             if(i % 100 == 0) {
-                System.out.println("Generation " + i + " (makespan = " + gBestMakespan + ")");
+                System.out.println("Iteration " + i + " (makespan = " + gBestMakespan + ")");
             }
 
             w = W_MAX - i*((W_MAX-W_MIN)/ maxIter);
@@ -63,35 +70,83 @@ public class JSSPSolver {
             }
 
             Collections.sort(swarm);
-            if(swarm.get(0).getMakespan() < gBestMakespan) {
+            makespan = swarm.get(0).getMakespan();
+            if(makespan < gBestMakespan) {
+                gBestMakespan = makespan;
                 gBestPosition = swarm.get(0).getPosition().clone();
-                gBestMakespan = swarm.get(0).getMakespan();
                 System.out.println("New best Makespan: " + gBestMakespan);
             }
 
-            if(gBestMakespan < 1.10*optimalFitness) {
-                System.out.println("Within 10% of optimal value by " + i + " generations");
+            if(gBestMakespan < targetMakespan) {
+                System.out.println("Reached target makespan by " + i + " iterations");
                 break;
             }
         }
 
-        Particle bestParticle = new Particle(n,m,jobs);
+        Particle bestParticle = new Particle();
         bestParticle.setPosition(gBestPosition);
         bestParticle.calculateMakespan();
         return bestParticle;
     }
 
-    public Individual beesAlgorithm() {
-        final int ns; // Number of scout bees
-        final int ne; // Number of elite sites
-        final int nb; // Number of best sites
-        final int nre; // Number of recruited bees for elite sites
-        final int nrb; // Number of recruited bees for best sites
-        final int ngh; // Initial site of neighbourhood
-        final int stlib; // Limit of stagnation cycles for site abandonment
+    private Bee beesAlgorithm(int numBees) {
+        final int ns = numBees/2; // Number of scout bees
+        final int ne = numBees/100; // Number of elite sites
+        final int nb = numBees/20; // Number of best sites
+        final int nre = numBees/4; // Number of recruited bees for elite sites
+        final int nrb = numBees/10; // Number of recruited bees for best sites
+        final int ngh = n*m/10; // Initial size of neighbourhood
 
+        List<Bee> scouts = new ArrayList();
 
-        ArrayList<Individual> scouts = new ArrayList();
-        return new Individual(n,m,jobs);
+        double[] gBestPosition = new double[n*m];
+
+        double makespan = Integer.MAX_VALUE;
+        double gBestMakespan = makespan;
+
+        System.out.println("Solving with Bees Algorithm");
+        for(int i = 0; i < maxIter; ++i) {
+            if(i % 100 == 0) {
+                System.out.println("Generation " + i + " (makespan = " + makespan + ", global best = " + gBestMakespan + ")");
+            }
+
+            // Send out scouts
+            while(scouts.size() < ns) {
+                Bee scout = new Bee();
+                scout.calculateMakespan();
+                scouts.add(scout);
+            }
+            Collections.sort(scouts);
+
+            makespan = scouts.get(0).getMakespan();
+            if(makespan < gBestMakespan) {
+                gBestMakespan = makespan;
+                gBestPosition = scouts.get(0).getPosition().clone();
+                System.out.println("New best Makespan: " + gBestMakespan);
+            }
+
+            if(gBestMakespan < targetMakespan) {
+                System.out.println("Within 10% of optimal value by " + i + " generations");
+                break;
+            }
+
+            List<Bee> bestBees = new ArrayList();
+            for(int j = 0; j < ne; ++j) {
+                Bee eliteBee = scouts.get(j).localSearch(nre,ngh);
+                bestBees.add(eliteBee);
+            }
+            for(int j = ne; j < ne+nb; ++j) {
+                Bee bestBee = scouts.get(j).localSearch(nrb,ngh);
+                bestBees.add(bestBee);
+            }
+
+            scouts = new ArrayList(bestBees);
+        }
+
+        Bee best = new Bee();
+        best.setPosition(gBestPosition);
+        best.calculateMakespan();
+
+        return best;
     }
 }
