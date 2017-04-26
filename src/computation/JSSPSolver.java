@@ -126,7 +126,7 @@ public class JSSPSolver {
             }
 
             if(gBestMakespan < targetMakespan) {
-                System.out.println("Within 10% of optimal value by " + i + " generations");
+                System.out.println("Reached target makespan by " + i + " iterations");
                 break;
             }
 
