@@ -1,14 +1,13 @@
-package model;
+package model.agent;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Queue;
 
 /**
  * Created by audun on 26.04.17.
  */
-public class Bee extends Individual {
+public class Bee extends RkAgent {
 
     public Bee(double[] position) {
         super(position);

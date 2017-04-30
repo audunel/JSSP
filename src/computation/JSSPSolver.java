@@ -1,6 +1,9 @@
 package computation;
 
 import model.*;
+import model.agent.Agent;
+import model.agent.Bee;
+import model.agent.Particle;
 
 import java.util.*;
 
@@ -26,7 +29,7 @@ public class JSSPSolver {
         this.maxIter = maxIter;
     }
 
-    public Individual solve(String algorithm, int popSize) {
+    public Agent solve(String algorithm, int popSize) {
         if(algorithm.equals("PSO")) {
             return particleSwarmOptimization(popSize);
         } else if(algorithm.equals("BA")) {

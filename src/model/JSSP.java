@@ -1,5 +1,7 @@
 package model;
 
+import org.jgrapht.DirectedGraph;
+import org.jgrapht.graph.*;
 import utils.StringUtils;
 
 import java.io.BufferedReader;
@@ -15,16 +17,22 @@ import java.util.Queue;
  */
 public class JSSP {
 
+
     private static final JSSP jssp = new JSSP();
     public static JSSP getInstance() {
         if(!loaded) {
             throw new RuntimeException("JSSP problem not loaded.");
         }
+
         return jssp;
     }
 
     private static int numJobs, numMachines;
     private static List<Queue<Subtask>> jobs;
+
+    private static DirectedGraph<Subtask,IntEdge> disjunctiveGraph;
+    private static final Subtask source = new Subtask(-1,Integer.MAX_VALUE);
+    private static final Subtask sink = new Subtask(-1,Integer.MAX_VALUE);
 
     private static boolean loaded = false;
 
@@ -62,6 +70,8 @@ public class JSSP {
         bufReader.close();
         file.close();
 
+        generateDisjunctiveGraph();
+
         loaded = true;
     }
 
@@ -76,4 +86,57 @@ public class JSSP {
     public List<Queue<Subtask>> getJobs() {
         return jobs;
     }
+
+    public DirectedGraph<Subtask,IntEdge> getDisjunctiveGraph() {
+        return disjunctiveGraph;
+    }
+
+    public Subtask getSource() {
+        return source;
+    }
+
+    public Subtask getSink() {
+        return sink;
+    }
+
+    private static void generateDisjunctiveGraph() {
+        disjunctiveGraph = new SimpleDirectedGraph(IntEdge.class);
+
+        disjunctiveGraph.addVertex(source);
+        disjunctiveGraph.addVertex(sink);
+        for(Queue<Subtask> job : jobs) {
+            for(Subtask subtask : job) {
+                disjunctiveGraph.addVertex(subtask);
+            }
+        }
+
+        // Add directed edges
+        for(Queue<Subtask> job : jobs) {
+            Subtask prevSubtask = source;
+            for(Subtask subtask : job) {
+                disjunctiveGraph.addEdge(prevSubtask, subtask, new IntEdge(subtask.getProcessingTime()));
+                prevSubtask = subtask;
+            }
+            disjunctiveGraph.addEdge(prevSubtask,sink, new IntEdge(1));
+        }
+
+        // Add undirected edges
+        for(Queue<Subtask> job : jobs) {
+            for(Subtask subtask : job) {
+                // Iterate over all subtasks and find those on the same machine
+                for(Queue<Subtask> subtasks : jobs) {
+                    for(Subtask otherSubtask : subtasks) {
+                        if(subtask.equals(otherSubtask)) {
+                            continue;
+                        }
+                        if(subtask.getMachine() == otherSubtask.getMachine()) {
+                            disjunctiveGraph.addEdge(subtask, otherSubtask, new IntEdge(otherSubtask.getProcessingTime()));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
 }

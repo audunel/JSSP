@@ -1,5 +1,7 @@
-package model;
+package model.agent;
 
+import model.JSSP;
+import model.Subtask;
 import utils.ArrayUtils;
 
 import java.util.*;
@@ -8,7 +10,7 @@ import java.util.*;
 /**
  * Created by audun on 16.04.17.
  */
-public class Individual implements Comparable<Individual> {
+public class RkAgent implements Agent, Comparable<RkAgent> {
     static final JSSP jssp = JSSP.getInstance();
 
     static final Random randGen = new Random();
@@ -19,22 +21,14 @@ public class Individual implements Comparable<Individual> {
     protected int makespan, minMakespan;
     protected double[] position, bestPosition;
 
-    public Individual(double[] position) {
+    public RkAgent(double[] position) {
         this.position = position;
         this.bestPosition = position.clone();
         this.minMakespan = Integer.MAX_VALUE;
     }
 
-    public Individual() {
+    public RkAgent() {
         this(ArrayUtils.randomArray(0,n*m,n*m));
-    }
-
-    public int getNumMachines() {
-        return m;
-    }
-
-    public int getNumJobs() {
-        return n;
     }
 
     public double[] getPosition() {
@@ -68,11 +62,9 @@ public class Individual implements Comparable<Individual> {
             int machine = subtask.getMachine();
             int processingTime = subtask.getProcessingTime();
             if(currentJobTime[i] <= machineAvaiableTime[machine]) {
-                subtask.setStartTime(machineAvaiableTime[machine]);
                 machineAvaiableTime[machine] += processingTime;
                 currentJobTime[i] = machineAvaiableTime[machine];
             } else {
-                subtask.setStartTime(currentJobTime[i]);
                 currentJobTime[i] += processingTime;
                 machineAvaiableTime[machine] = currentJobTime[i];
             }
@@ -96,7 +88,31 @@ public class Individual implements Comparable<Individual> {
         return makespan;
     }
 
-    public int compareTo(Individual other) {
+    public void scheduleJobs() {
+        List<Queue<Subtask>> jobsToSchedule = new ArrayList();
+        for(Queue<Subtask> job : jobs) {
+            jobsToSchedule.add(new LinkedList(job));
+        }
+        int[] machineAvaiableTime = new int[m];
+        int[] currentJobTime = new int[n];
+        int[] sequence = this.getSequence();
+        for(int i : sequence) {
+            Subtask subtask = jobsToSchedule.get(i).remove();
+            int machine = subtask.getMachine();
+            int processingTime = subtask.getProcessingTime();
+            if(currentJobTime[i] <= machineAvaiableTime[machine]) {
+                subtask.setStartTime(machineAvaiableTime[machine]);
+                machineAvaiableTime[machine] += processingTime;
+                currentJobTime[i] = machineAvaiableTime[machine];
+            } else {
+                subtask.setStartTime(currentJobTime[i]);
+                currentJobTime[i] += processingTime;
+                machineAvaiableTime[machine] = currentJobTime[i];
+            }
+        }
+    }
+
+    public int compareTo(RkAgent other) {
         if(this.getMakespan() > other.getMakespan()) {
             return 1;
         } else if(this.getMakespan() < other.getMakespan()) {

@@ -1,6 +1,6 @@
 package visualization;
 
-import model.Individual;
+import model.agent.Agent;
 import model.JSSP;
 import model.Subtask;
 import org.jfree.chart.*;
@@ -21,7 +21,9 @@ import java.util.List;
 
 public class ScheduleFrame extends ApplicationFrame {
 
-    public ScheduleFrame(String scheduleName, Individual ind) {
+    JSSP jssp = JSSP.getInstance();
+
+    public ScheduleFrame(String scheduleName, Agent agent) {
         super(scheduleName);
 
         List<Queue<Subtask>> jobs = JSSP.getInstance().getJobs();
@@ -29,8 +31,8 @@ public class ScheduleFrame extends ApplicationFrame {
         TaskSeriesCollection dataset = new TaskSeriesCollection();
         TaskSeries machineSchedule = new TaskSeries("job-schedule");
 
-        for(int i = 0; i < ind.getNumMachines(); ++i) {
-            Task machine = new TaskNumeric(""+i, 0, ind.getMakespan());
+        for(int i = 0; i < jssp.getNumMachines(); ++i) {
+            Task machine = new TaskNumeric(""+i, 0, agent.getMakespan());
             machineSchedule.add(machine);
 
             for(Queue<Subtask> job : jobs) {

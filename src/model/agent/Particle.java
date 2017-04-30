@@ -1,11 +1,9 @@
-package model;
-
-import java.util.*;
+package model.agent;
 
 /**
  * Created by audun on 24.04.17.
  */
-public class Particle extends Individual {
+public class Particle extends RkAgent {
 
     final double maxVelocity;
     double[] velocity;
