@@ -2,15 +2,17 @@ package model;
 
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.graph.*;
+import utils.ArrayUtils;
 import utils.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.lang.reflect.Array;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Created by audun on 26.04.17.
@@ -29,10 +31,12 @@ public class JSSP {
 
     private static int numJobs, numMachines;
     private static List<Queue<Subtask>> jobs;
+    private static Map<Integer,Set<Subtask>> machineSets;
+    private static List<Integer> machinesByTlm;
 
     private static DirectedGraph<Subtask,IntEdge> disjunctiveGraph;
-    private static final Subtask source = new Subtask(-1,Integer.MAX_VALUE);
-    private static final Subtask sink = new Subtask(-1,Integer.MAX_VALUE);
+    private static final Subtask source = new Subtask(-1,-1,Integer.MAX_VALUE);
+    private static final Subtask sink = new Subtask(-1,-1,Integer.MAX_VALUE);
 
     private static boolean loaded = false;
 
@@ -63,7 +67,7 @@ public class JSSP {
                 throw new IOException("Could not parse description of job " + i + ". File may be invalid or corrupt.",e);
             }
             for(int j = 0; j < numMachines; ++j) {
-                job.add(new Subtask(jobDescription.get(2*j), jobDescription.get(2*j + 1)));
+                job.add(new Subtask(i, jobDescription.get(2*j), jobDescription.get(2*j + 1)));
             }
             jobs.add(job);
         }
@@ -71,35 +75,47 @@ public class JSSP {
         file.close();
 
         generateDisjunctiveGraph();
+        generateMachineSets();
+        orderMachinesByTLM();
 
         loaded = true;
     }
 
-    public int getNumJobs() {
+    public static int getNumJobs() {
         return numJobs;
     }
 
-    public int getNumMachines() {
+    public static int getNumMachines() {
         return numMachines;
     }
 
-    public List<Queue<Subtask>> getJobs() {
+    public static List<Queue<Subtask>> getJobs() {
         return jobs;
     }
 
-    public DirectedGraph<Subtask,IntEdge> getDisjunctiveGraph() {
+    public static Set<Subtask> getMachineSet(int machine) {
+        return machineSets.get(machine);
+    }
+
+    public static List<Integer> getMachinesByTlm() {
+        return machinesByTlm;
+    }
+
+    public static DirectedGraph<Subtask,IntEdge> getDisjunctiveGraph() {
         return disjunctiveGraph;
     }
 
-    public Subtask getSource() {
+    public static Subtask getSource() {
         return source;
     }
 
-    public Subtask getSink() {
+    public static Subtask getSink() {
         return sink;
     }
 
+
     private static void generateDisjunctiveGraph() {
+
         disjunctiveGraph = new SimpleDirectedGraph(IntEdge.class);
 
         disjunctiveGraph.addVertex(source);
@@ -117,10 +133,10 @@ public class JSSP {
                 disjunctiveGraph.addEdge(prevSubtask, subtask, new IntEdge(subtask.getProcessingTime()));
                 prevSubtask = subtask;
             }
-            disjunctiveGraph.addEdge(prevSubtask,sink, new IntEdge(1));
+            disjunctiveGraph.addEdge(prevSubtask,sink, new IntEdge(0));
         }
 
-        // Add undirected edges
+        // Add undirected edges and generate machine graphs
         for(Queue<Subtask> job : jobs) {
             for(Subtask subtask : job) {
                 // Iterate over all subtasks and find those on the same machine
@@ -138,5 +154,37 @@ public class JSSP {
         }
     }
 
+    private static void generateMachineSets() {
+        machineSets = new HashMap();
+        for(int machine = 0; machine < numMachines; ++machine) {
+            machineSets.put(machine, new HashSet());
+        }
+        for(Queue<Subtask> job : jobs) {
+            for(Subtask subtask : job) {
+                machineSets.get(subtask.getMachine()).add(subtask);
+            }
+        }
+    }
 
+    private static void orderMachinesByTLM() {
+        int[] tlm = new int[numMachines];
+        for(Queue<Subtask> job : jobs) {
+            for(Subtask subtask : job) {
+                tlm[subtask.getMachine()] += subtask.getProcessingTime();
+            }
+        }
+
+        int[] sorted = tlm.clone();
+
+        machinesByTlm = new ArrayList();
+        for(int i = 0; i < numMachines; ++i) {
+            machinesByTlm.add(0);
+        }
+
+        for(int i = 0; i < numMachines; ++i) {
+            int machine = ArrayUtils.indexOf(tlm,sorted[i]);
+            machinesByTlm.set(i,machine);
+        }
+        Collections.reverse(machinesByTlm);
+    }
 }
