@@ -43,7 +43,7 @@ public class Ant implements Agent, Comparable<Ant> {
 
     public void traverseGraph(Map<IntEdge,Double> pheromones) {
         final int alpha = 1;
-        final int beta = 4;
+        final int beta = 2;
 
         sequence = new ArrayList();
         edges = new HashSet();
@@ -81,6 +81,15 @@ public class Ant implements Agent, Comparable<Ant> {
                     break;
                 }
             }
+
+            double newTau = (1-0.1)*pheromones.get(transition) + 0.1*1.0;
+            if(newTau > 1.999) {
+                newTau = 1.999;
+            }
+            if(newTau < 0.001) {
+                newTau = 0.001;
+            }
+            pheromones.put(transition,newTau);
 
             currentVertex = disjunctiveGraph.getEdgeTarget(transition);
             available.remove(transition);

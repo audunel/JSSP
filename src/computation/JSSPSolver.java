@@ -176,7 +176,7 @@ public class JSSPSolver {
     }
 
     private Ant antColonyOptimization() {
-        final int numAnts = Math.max(10,n*m/10);
+        final int numAnts = 100;
         final double Q = targetMakespan;
         final double tauInitial = 1.0;
         final double rho = 0.5;
@@ -199,7 +199,7 @@ public class JSSPSolver {
         List<Integer> gBestSequence = new ArrayList();
         System.out.println("Solving with Ant Colony Optimization");
         for(int i = 0; i < maxIter; ++i) {
-            if(i % 100 == 0) {
+            if(i % 10 == 0) {
                 System.out.println("Iteration " + i + " (makespan = " + gBestMakespan + ")");
             }
 
@@ -219,7 +219,7 @@ public class JSSPSolver {
                 break;
             }
 
-            Map<IntEdge,Double> deltaTau = new HashMap();
+            /*Map<IntEdge,Double> deltaTau = new HashMap();
             for(Ant ant : ants) {
                 for(IntEdge edge : ant.getEdges()) {
                     deltaTau.put(edge,deltaTau.getOrDefault(edge,0.0) + ant.getMakespan());
@@ -227,7 +227,7 @@ public class JSSPSolver {
             }
             for(IntEdge edge : deltaTau.keySet()) {
                 deltaTau.put(edge, Q/(deltaTau.get(edge) + 1.0));
-            }
+            }*/
 
             Collections.sort(ants);
             best = ants.get(0);
@@ -238,8 +238,8 @@ public class JSSPSolver {
 
             for(IntEdge edge : pheromones.keySet()) {
                 double newTau = (1-rho)*pheromones.get(edge)
-                        + rho*deltaTau.getOrDefault(edge,0.0)
-                        + epsilon*deltaTauElite.getOrDefault(edge,0.0);
+                        /*+ rho*deltaTau.getOrDefault(edge,0.0)*/
+                        + rho*deltaTauElite.getOrDefault(edge,0.0);
                 if(newTau > maxTau) {
                     newTau = maxTau;
                 }

@@ -122,7 +122,5 @@ public class MyGanttRenderer extends GanttRenderer {
                 }
             }
         }
-
     }
-
 }

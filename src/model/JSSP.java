@@ -174,17 +174,27 @@ public class JSSP {
             }
         }
 
-        int[] sorted = tlm.clone();
+        TreeMap<Integer,List<Integer>> tlmMap = new TreeMap();
+        for(int machine = 0; machine < numMachines; ++machine) {
+            if(!tlmMap.containsKey(tlm[machine])) {
+                tlmMap.put(tlm[machine],new ArrayList());
+            }
+            tlmMap.get(tlm[machine]).add(machine);
+        }
+
+        //int[] sorted = tlm.clone();
 
         machinesByTlm = new ArrayList();
         for(int i = 0; i < numMachines; ++i) {
             machinesByTlm.add(0);
         }
 
-        for(int i = 0; i < numMachines; ++i) {
-            int machine = ArrayUtils.indexOf(tlm,sorted[i]);
-            machinesByTlm.set(i,machine);
+        int i = 0;
+        for(int value : tlmMap.descendingKeySet()) {
+            for(int machine : tlmMap.get(value)) {
+                machinesByTlm.set(i,machine);
+                ++i;
+            }
         }
-        Collections.reverse(machinesByTlm);
     }
 }

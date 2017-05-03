@@ -1,7 +1,6 @@
 import computation.JSSPSolver;
 import model.agent.Agent;
 import model.JSSP;
-import model.agent.Ant;
 import org.jfree.ui.RefineryUtilities;
 import visualization.ScheduleFrame;
 
@@ -13,7 +12,7 @@ public class Main {
 
         final String FILEPATH = "test_data/3.txt";
         final int ACCEPTABLE_MAKESPAN = 1276;
-        final String ALGORITHM = "BA";
+        final String ALGORITHM = "PSO"; // "PSO", "BA" or "ACO"
 
         JSSP.loadFile(FILEPATH);
 
